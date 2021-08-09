@@ -251,6 +251,21 @@ const DropArrowBig = ({ className, onClick }) => {
 	);
 };
 
+const Preloader = () => {
+	const lines = [];
+	for (let i = 0; i < 11; i++) {
+		lines.push(<div className="preloader-container_preloader-line"></div>);
+	}
+
+	return (
+		<div className="preloader-container">
+			<div className="preloader-container_preloader">
+				{lines}
+			</div>
+		</div>
+	);
+};
+
 export {
 	SliderArrow,
 	ArrowDown,
@@ -266,4 +281,5 @@ export {
 	BigPlane,
 	DropArrow,
 	DropArrowBig,
+	Preloader
 };

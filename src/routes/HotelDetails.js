@@ -12,11 +12,10 @@ import {
 	Icons,
 	Button,
 	BookingForm,
-	hotelItem,
 	flightsArr,
 } from "../components/export";
 import useRouter from "use-react-router";
-import { getHotelById, flightsSearch, getHotelImages } from "./apiQueries";
+import { flightsSearch } from "./apiQueries";
 
 const HotelDetails = () => {
 	const className = "hotel-details";
@@ -29,30 +28,33 @@ const HotelDetails = () => {
 	const cardBottomElements = [
 		{
 			icon: <Icons.City />,
-			key: "centerDistance",
+			key: "destinatation-to-city",
+			unit: ' km'
 		},
 		{
 			icon: <Icons.Swimmer />,
-			key: "seaDistance",
+			key: "destinatation-to-beach",
+			unit: ' m'
 		},
 		{
 			icon: <Icons.BigPlane />,
-			key: "flyDistance",
+			key: "destinatation-to-airport",
+			unit: ' km'
 		},
 	];
 	const selectedFlightBlocks = [
 		{
-			title: "Flight detail",
-			subtitle: "title",
+			title: "Boarding",
+			subtitle: "AirportRoute",
 			desc: "subtitle",
 		},
 		{
-			title: "Flight detail",
-			subtitle: "boarding",
+			title: "Boarding",
+			subtitle: "MealName",
 		},
 		{
 			title: "Room type",
-			subtitle: "roomType",
+			subtitle: "RoomName",
 		},
 		{
 			title: "Transfer",
@@ -62,21 +64,47 @@ const HotelDetails = () => {
 
 	// данные буккинга с local storage
 	const bookingDataLS = JSON.parse(localStorage.getItem("bookingData"));
-	console.log("bookingDataLS", bookingDataLS);
 
 	// информация о конкретном отеле  с json
-	const [hotel, setHotel] = useState([]);
+	const hotel = JSON.parse(localStorage.getItem("hotelDetailsPageData"));
+
+	const flightsList = JSON.parse(localStorage.getItem('hotelListData')).filter(hotelItem => {
+		return hotelItem['HotelID'] === hotel['HotelID']
+	});
+	flightsList.forEach(flightItem => {
+		flightItem.transfer = 'Individual';
+
+		const dateFrom = new Date(flightItem['FlightDate']);
+		const dateFromFormat = `${dateFrom.getDate()}.${
+			(dateFrom.getMonth() + 1) < 10
+				? '0' + (dateFrom.getMonth() + 1)
+				: dateFrom.getMonth() + 1
+		}`;
+		const dateTo = new Date(flightItem['BackFlightDate']);
+		const dateToFormat = `${dateTo.getDate()}.${
+			(dateTo.getMonth() + 1) < 10
+				? '0' + (dateTo.getMonth() + 1)
+				: dateTo.getMonth() + 1
+		}`;
+		flightItem.date = `${dateFromFormat} - ${dateToFormat}`;
+
+		const difference = new Date(dateTo - dateFrom);
+		flightItem.subtitle = `${difference.getHours()}h ${difference.getMinutes()}m`;
+	});
+
 	// список рейсов с json
 	const [flights, setFlights] = useState([]);
 
 	const [formState, setFormState] = useState({
 		isOpen: pathname?.includes("purchase"), // открыта ли форма пассажира
-		selectedFlight: flightsArr[0] || {},
+		selectedFlight: flightsList[0] || {},
 	});
 
 	// выбор рейса (клик на кнопку book)
 	const handleBookClick = () => {
 		history.push(`/hotel-details/${hotel?.id}/purchase`);
+		//const win = window.open(`/hotel-details/${hotel?.id}/purchase`, "_blank");
+		//win.focus();
 
 		localStorage.setItem(
 			"hotelDetailsPageData",
@@ -130,36 +158,13 @@ const HotelDetails = () => {
 	};
 
 	useEffect(() => {
-		setHotel(hotelItem); // удалить строку после подкл. к апи
-		setFlights(flightsArr); // удалить строку после подкл. к апи
-
-		// если надо будет запрашивать доп инфу о отеле по id
-		getHotelById(hotel.id).then(
-			(response) => {
-				console.log("getHotelImages", response);
-				setHotel(hotelItem);
-			},
-			(error) => {
-				console.error("Error while geocoding", error);
-			},
-		);
-
-		getHotelImages(hotel.id).then(
-			(response) => {
-				console.log("getHotelImages", response);
-			},
-			(error) => {
-				console.error("Error while geocoding", error);
-			},
-		);
-
 		const date = new Date(bookingDataLS.date.date);
-		const dateInterval = bookingDataLS.date.dateInterval;
+		const dateDuration = bookingDataLS.date.duration;
 
 		const date_from = encodeURIComponent(
 			format(
 				sub(date, {
-					days: dateInterval,
+					days: dateDuration,
 				}),
 				"dd/mm/yyyy",
 			),
@@ -168,7 +173,7 @@ const HotelDetails = () => {
 		const date_to = encodeURIComponent(
 			format(
 				add(date, {
-					days: dateInterval,
+					days: dateDuration,
 				}),
 				"dd/mm/yyyy",
 			),
@@ -190,9 +195,52 @@ const HotelDetails = () => {
 		);
 	}, []);
 
+	const [descriptionText, setDescriptionText] = useState(hotel['description-short']);
+
 	useEffect(() => {
 		window.scrollTo(0, 0);
 	}, [formState.isOpen, pathname]);
+
+	const handleFlightBlockClick = () => {
+		const value = popoverState === 'popover--open' ? '' : 'popover--open';
+		setPopoverState(value);
+	};
+
+	const [popoverState, setPopoverState] = useState('');
+
+	const getPopoverDate = (dateString) => {
+		const date = new Date(dateString);
+		const getDayOfWeek = new Intl.DateTimeFormat('en-US', { weekday: 'long'}).format(date);
+		const dateFormat = encodeURIComponent(
+			format(
+				date,
+				"dd.MM.yy",
+			),
+		);
+
+		return `${getDayOfWeek}, ${dateFormat}`;
+	};
+
+	const getPopoverTime = (dateStringStart, dateStringEnd) => {
+		const dateFlightStart = dateStringStart.slice(0,5);
+		const dateFlightEnd = dateStringEnd.slice(0,5);
+
+		return `${dateFlightStart} – ${dateFlightEnd}`;
+	};
+
+
+	const popoverText = {
+		to: {
+			date: `${getPopoverDate(hotel.FlightDate)}`,
+			place: `${bookingDataLS['origin']['title']} - ${hotel['resort']}`,
+			time: getPopoverTime(hotel.FlightDateTimeDeparture, hotel.FlightDateTimeArrival)
+		},
+		from: {
+			date: `${getPopoverDate(hotel.BackFlightDate)}`,
+			place: `${hotel['resort']} - ${bookingDataLS['origin']['title']}`,
+			time: getPopoverTime(hotel.BackFlightDateTimeDeparture, hotel.BackFlightDateTimeArrival)
+		}
+	};
 
 	return (
 		<Elements stripe={stripePromise}>
@@ -215,9 +263,9 @@ const HotelDetails = () => {
 						visibleSlides={1}
 						naturalSlideWidth={100}
 						naturalSlideHeight={100}
-						totalSlides={hotel?.imgs?.length}>
+						totalSlides={hotel?.gallery?.length}>
 						<Slider>
-							{hotel?.imgs?.map((img, i) => (
+							{hotel?.gallery?.map((img, i) => (
 								<img
 									className={`${className}_card-img`}
 									src={img}
@@ -230,8 +278,11 @@ const HotelDetails = () => {
 					</CarouselProvider>
 
 					<div className={`${className}_card-header`}>
-						<h2 className={`${className}_card-header_title`}>{hotel.title}</h2>
-						<p className={`${className}_card-header_cities`}> {hotel.cities}</p>
+						<h2 className={`${className}_card-header_title`}>{hotel.HotelName}</h2>
+						<p className={`${className}_card-header_cities`}> {hotel['location-text']}</p>
+						<p className={`${className}_card-header_dates`}>
+							{formState.selectedFlight.date}
+						</p>
 						{width <= 480 && formState.isOpen && (
 							<div className={`${className}_card-flight`}>
 								<span
@@ -243,16 +294,15 @@ const HotelDetails = () => {
 						)}
 					</div>
 
-					{true && (
-						<div className={`${className}_card-bottom`}>
-							{cardBottomElements.map((item, i) => (
-								<div className='row-bw-center' key={i}>
-									{item.icon}
-									{hotel && hotel[item.key]}
-								</div>
-							))}
-						</div>
-					)}
+					<div className={`${className}_card-bottom`}>
+						{cardBottomElements.map((item, i) => (
+							<div className='row-bw-center' key={i}>
+								{item.icon}
+								{hotel && hotel[item.key]}
+								{item.unit}
+							</div>
+						))}
+					</div>
 
 					{formState.isOpen && width > 480 && (
 						<div className={`${className}_card-flight`}>
@@ -269,29 +319,44 @@ const HotelDetails = () => {
 					<div>
 						<section className={`${className}_desc-block`}>
 							<div
-								style={{
+								/*style={{
 									height: isDescOpen ? `${descHeight}px` : "88px",
-								}}
+								}}*/
 								className={cx(`${className}_desc-block_text`, {
 									"hotel-details_desc-block_text--visible": isDescOpen,
 								})}>
-								<p ref={descRef}> {hotel.desc}</p>
+								<p ref={descRef}>{descriptionText}</p>
 							</div>
 							{!isDescOpen && (
 								<p
-									onClick={() => setIsDescOpen(true)}
+									onClick={() => { setIsDescOpen(true); setDescriptionText(hotel['description-long']); }}
 									className={`${className}_desc-block_more`}>
 									<span>More</span> <Icons.DropArrow />
 								</p>
 							)}
 						</section>
 
+						<section className={`${className}_desc-block`}>
+							<div className={`${className}_choice`}>
+								<div>
+									<p
+										className={`${className}_choice-price price`}>{`${formState.selectedFlight['PackagePrice']}$`}</p>
+								</div>
+
+								<Button text='Book' onClick={handleBookClick} />
+							</div>
+						</section>
+
 						<section className={`${className}_flight-block`}>
 							{selectedFlightBlocks.map((block, i) => {
 								const { title, subtitle, desc } = block;
 								const selectedFlight = formState.selectedFlight;
+								const isAirportRoute = subtitle === 'AirportRoute';
 								return (
-									<div className={`${className}_flight-block_item`} key={i}>
+									<div
+										onClick={() => isAirportRoute ?  handleFlightBlockClick() : null}
+										className={`${className}_flight-block_item`}
+										key={i}>
 										<p className={`${className}_flight-block_item-title`}>
 											{title}
 										</p>
@@ -303,6 +368,20 @@ const HotelDetails = () => {
 												{selectedFlight[desc]}
 											</p>
 										)}
+										{isAirportRoute && (
+											<div className={`${className}_flight-block_item-popover ${popoverState}`}>
+												<span onClick={() => handleFlightBlockClick()} className="close"></span>
+												<p className={'popover-header'}>TO THE BEACH:</p>
+												<p className={'popover-text'}>{popoverText.to.date}</p>
+												<p className={'popover-text'}>{popoverText.to.place}</p>
+												<p className={'popover-text'}>{popoverText.to.time}</p>
+
+												<p className={'popover-header'}>BACK HOME:</p>
+												<p className={'popover-text'}>{popoverText.from.date}</p>
+												<p className={'popover-text'}>{popoverText.from.place}</p>
+												<p className={'popover-text'}>{popoverText.from.time}</p>
+											</div>
+										)}
 									</div>
 								);
 							})}
@@ -312,14 +391,14 @@ const HotelDetails = () => {
 							More dates to this hotel
 						</div>
 						<section className={`${className}_more-dates`}>
-							{flights?.map((flight, i) => {
+							{flightsList?.map((flight, i) => {
 								const { title, subtitle, price, date } = flight;
 								return (
 									<div className={`${className}_more-dates_item`} key={i}>
 										<div className='row-bw-center'>
 											<div>
 												<p className={`${className}_more-dates_item-cities`}>
-													{title}
+													{flight['AirportRoute']}
 												</p>
 												<p className={`${className}_more-dates_item-stops`}>
 													{subtitle}
@@ -327,7 +406,7 @@ const HotelDetails = () => {
 											</div>
 											<div>
 												<p className={`${className}_more-dates_item-price`}>
-													{`${price}$`}
+													{`${flight['PackagePrice']}$`}
 												</p>
 												<p className={`${className}_more-dates_item-date`}>
 													{date}
@@ -346,18 +425,6 @@ const HotelDetails = () => {
 								);
 							})}
 						</section>
-
-						<div className={`${className}_choice`}>
-							<div>
-								<p
-									className={`${className}_choice-price price`}>{`${formState.selectedFlight.price}$`}</p>
-								<p className={`${className}_choice-date`}>
-									{formState.selectedFlight.date}
-								</p>
-							</div>
-
-							<Button text='Book' onClick={handleBookClick} />
-						</div>
 					</div>
 				)}
 				{formState.isOpen && (

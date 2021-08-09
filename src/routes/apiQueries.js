@@ -75,3 +75,53 @@ export const saveBooking = ({
 	fetchApi({
 		url: `bookings/save?bags=${bags}&booking_token=${booking_token}&currency=${currency}&passengers=${passengers}`,
 	});
+
+const postFetchApi = async ({ url }, req) => {
+	const init = {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(req)
+	};
+
+	const response = await fetch(`${ENDPOINT}/${url}`, init);
+	return await response.json();
+};
+
+export const getMainData = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_HOMEPAGE_STATIC",
+	data: ""
+});
+
+export const getFooterData = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_FOOTER_STATIC",
+	data: ""
+});
+
+export const getHomeHotelsData = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_HOMEPAGE_HOTEL_LIST",
+	data: ""
+});
+
+export const getOriginList = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_ORIGIN_LIST",
+	data: ""
+});
+
+export const getDestinationList = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_DESTINATION_LIST",
+	data: ""
+});
+
+export const getDurationList = () => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_DURATIONS_LIST",
+	data: ""
+});
+
+export const getGetPackages = (
+	data = "{'beginDate':'2021-09-01','endDate':'2022-09-01', 'beginNight':7, 'endNight':7, 'adultNum':2, 'kidNum':0, 'filter':true, 'sort':true}"
+) => postFetchApi({ url: "commands/microsite" }, {
+	command: "GET_PACKAGES",
+	data: data
+});

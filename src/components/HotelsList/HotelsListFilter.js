@@ -7,8 +7,7 @@ import DatePicker from "react-datepicker";
 import { subMonths, addMonths } from "date-fns";
 
 import "react-datepicker/dist/react-datepicker.css";
-
-const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
+const HotelsFilter = ({originList, destinationList, durations, filterState, activeTabKey, handleTabClick }) => {
 	const className = "hotels-filter";
 
 	const [state, setState] = useState(filterState);
@@ -25,7 +24,10 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 	};
 
 	let date = new Date(filterState.date.date);
-	const formattedDate = format(date, "MMM dd");
+	const getFormattedDate = (selectedDate) => {
+		const newDate = new Date(selectedDate)
+		return selectedDate ? format(newDate, "MMM dd") : format(date, "MMM dd");
+	};
 
 	const getTravellersTitle = () => {
 		const travellers = filterState.travellers;
@@ -43,7 +45,8 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 			return `${adultsTitle}, ${childrenTitle}`;
 		}
 	};
-	const filters = [
+
+	const [filters, setFilters] = useState([
 		{
 			icon: <Icons.Plane />,
 			title: "Origin",
@@ -59,7 +62,7 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 		{
 			icon: <Icons.Calendar />,
 			title: "Date",
-			value: `${formattedDate} +/- ${filterState.date.dateInterval}d`,
+			value: `${getFormattedDate(filterState.date.date)} - ${filterState.date.duration} days`,
 			key: "date",
 		},
 		{
@@ -68,9 +71,18 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 			value: getTravellersTitle(),
 			key: "travellers",
 		},
-	];
+	]);
 
-	useEffect(() => {}, [filterState]);
+	useEffect(() => {
+		const filtersNew = filters;
+		filtersNew[0].value = filterState.origin.title;
+		filtersNew[1].value = filterState.destination.title;
+		filtersNew[2].value = `${getFormattedDate(filterState.date.date)} - ${filterState.date.duration} days`;
+		filtersNew[3].value = getTravellersTitle();
+		setFilters(filtersNew);
+		closeTab();
+	}, [filterState]);
+
 	return (
 		<div
 			className={cx(`${className}`, {
@@ -83,9 +95,10 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 				{filters.map((tab, i) => {
 					const { icon, title, value, key } = tab;
 					const isTabOpen = activeTabKey === key;
+					const handleClick = () => handleTabClick({ tab });
 					return (
 						<li
-							onClick={() => handleTabClick({ tab })}
+							onClick={handleClick}
 							className={cx(`${className}_item`, {
 								"hotels-filter_item--active": isTabOpen,
 							})}
@@ -107,9 +120,30 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 			</ul>
 			{activeTabKey && (
 				<ul className={`${className}_content`}>
-					{(activeTabKey === "origin" || activeTabKey === "destination") &&
-						citiesArr.map((city, i) => {
-							const { title, id } = city;
+					{activeTabKey === "origin" &&
+					originList.map((city, i) => {
+						const { title, id, disable } = city;
+						const isActive = state && state[activeTabKey].id === id;
+						return (
+							<li
+								onClick={() => disable
+                  ? null
+                  : updateState({ key: activeTabKey, value: city })
+                }
+								className={cx(`${className}_city`, {
+									"hotels-filter_city--active": isActive,
+								}, {
+								  "hotels-filter_city--disabled": disable
+                })}
+								key={i}>
+								{title}
+							</li>
+						);
+					})}
+
+					{activeTabKey === "destination" &&
+					destinationList.map((city, i) => {
+							const { title, id, disable } = city;
 							const isActive = state && state[activeTabKey].id === id;
 							return (
 								<li
@@ -118,7 +152,9 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 									}
 									className={cx(`${className}_city`, {
 										"hotels-filter_city--active": isActive,
-									})}
+									}, {
+                    "hotels-filter_city--disabled": disable
+                  })}
 									key={i}>
 									{title}
 								</li>
@@ -144,7 +180,7 @@ const HotelsFilter = ({ filterState, activeTabKey, handleTabClick }) => {
 					)}
 
 					{activeTabKey === "date" && (
-						<DateTab state={state} updateState={updateState} />
+						<DateTab durations={durations} state={state} updateState={updateState} />
 					)}
 
 					<div className={`${className}_content_btn-group`}>
@@ -213,68 +249,49 @@ const TravellersItem = ({ state, title, updateState }) => {
 	);
 };
 
-const DateTab = ({ state, updateState }) => {
+const DateTab = ({ durations, state, updateState }) => {
 	const className = "hotels-filter_date";
 	console.log(state);
 	const [startDate, setStartDate] = useState(
 		new Date(state.date.date) || new Date(),
 	);
-	const [days, setDays] = useState(state.date.dateInterval);
 
 	const handleDatechange = (date) => {
-		console.log(date);
 		setStartDate(date);
 		updateState({ key: "date", value: { ...state.date, date } });
 	};
-	const radioBtns = [
-		{
-			label: "-/+ 3 Days",
-			name: "3-days",
-			value: 3,
-			checked: days === 3,
-		},
-		{
-			label: "-/+ 5 Days",
-			name: "5-days",
-			value: 5,
-			checked: days === 5,
-		},
-		{
-			label: "-/+ 10 Days",
-			name: "10-days",
-			value: 10,
-			checked: days === 10,
-		},
-	];
 
-	console.log(startDate);
-
-	const handleRadioBtnClick = (btn) => {
-		console.log("handleRadioBtnClick", btn);
-		setDays(btn.value);
-		updateState({
-			key: "date",
-			value: { ...state.date, dateInterval: btn.value },
+	const [duration, setDuration] = useState(state.date.duration);
+	const durationsRadioBtns = [];
+	durations.forEach(item => {
+		durationsRadioBtns.push({
+			label: `${item} days`,
+			name: `${item} days`,
+			value: item,
+			checked: duration === item,
 		});
+	});
+	const [durationsData, setDurationsData] = useState(durationsRadioBtns);
+
+
+	const handleDurationRadioBtnClick = (duration) => {
+		setDuration(duration);
+		const durationsRadioBtns = [];
+		durations.forEach(item => {
+			durationsRadioBtns.push({
+				label: `${item} days`,
+				name: `${item} days`,
+				value: item,
+				checked: duration === item,
+			});
+		});
+		setDurationsData(durationsRadioBtns);
+		const date = startDate;
+		updateState({ key: "date", value: { ...state.date, date, duration } });
 	};
+
 	return (
 		<div className={`${className}`}>
-			<div className={`${className}_header`}>
-				<div className={`${className}_radio-btns`}>
-					<p className={`${className}_title`}>Departure Date</p>
-
-					<div className='row-bw-center'>
-						{radioBtns.map((btn, i) => (
-							<RadioButton
-								{...btn}
-								onClick={() => handleRadioBtnClick(btn)}
-								key={i}
-							/>
-						))}
-					</div>
-				</div>
-			</div>
-
 			<div className={`${className}-calendar`}>
 				<DatePicker
 					selected={startDate}
@@ -284,6 +301,22 @@ const DateTab = ({ state, updateState }) => {
 					minDate={subMonths(new Date(), 5)}
 					maxDate={addMonths(new Date(), 6)}
 				/>
+			</div>
+
+			<div className={`${className}_filters`}>
+				<div className={`${className}_radio-btns`}>
+					<p className={`${className}_title`}>Duration</p>
+
+					<div className='row-start-start'>
+						{durationsData.map((btn, i) => (
+							<RadioButton
+								{...btn}
+								onClick={() => handleDurationRadioBtnClick(btn.value)}
+								key={i}
+							/>
+						))}
+					</div>
+				</div>
 			</div>
 		</div>
 	);

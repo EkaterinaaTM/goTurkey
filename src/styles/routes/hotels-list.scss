@@ -29,18 +29,13 @@
         position: relative;
         z-index: 2;
         &--open {
-            // position: sticky;
-            // z-index: 2;
+            position: sticky;
+            top: 0;
+            background-color: #F5F6F6;
         }
         &_tabs {
             @include row-bw-center;
             border-bottom: 2px solid $red;
-        
-            &--open {
-                position: sticky;
-                top: 0;
-                z-index: 1;
-            }
         }
 
         &_item {
@@ -108,6 +103,11 @@
             &--active {
                 background-color: $dividers;
             }
+
+            &--disabled {
+                cursor: default;
+                color: #a4a4a4;
+            }
         }
 
         &_travellers {
@@ -158,23 +158,26 @@
                 margin-bottom: 18px;
             }
 
-            &_header {
+            &-calendar {
+                padding-top: 24px;
                 width: 100%;
-                border-bottom: 1px solid $dividers;
-                padding: 32px 0 12px 0;
-                margin-bottom: 28px;
+                max-width: 338px;
+            }
+
+            &_filters {
+                width: 100%;
+                border-top: 1px solid $dividers;
+                padding-top: 24px;
                 font-family: 'Gilroy-700', sans-serif;
             }
 
             &_radio-btns {
                 max-width: 338px;
                 margin: 0 auto;
-                // @include row-bw-center;
-            }
 
-            &-calendar {
-                width: 100%;
-                max-width: 338px;
+                .radio-btn_wrapper {
+                    margin-right: 24px;
+                }
             }
         }
 }
@@ -341,6 +344,7 @@
 
             &-row {
                 @include row-bw-stretch;
+                width: 100%;
                 
                 .hotels-list_card {
                     min-height: 215px;
@@ -632,5 +636,86 @@
 
     .hotels-pagination {
         margin: 30px auto 35px auto;
+    }
+}
+
+.preloader-container {
+    height: 30vw;
+    display: flex;
+    align-items: center;
+    margin: 0 auto;
+    overflow: hidden;
+    background: rgba(241, 242, 243, 0);
+
+    @keyframes preloader {
+        0% { opacity: 1 }
+        100% { opacity: 0 }
+    }
+
+    &_preloader {
+        width: 78px;
+        height: 78px;
+        position: relative;
+        transform: translateZ(0) scale(0.78);
+        backface-visibility: hidden;
+        transform-origin: 0 0;
+
+        &-line {
+            left: 47.5px;
+            top: 22px;
+            position: absolute;
+            animation: preloader linear 1.639344262295082s infinite;
+            background: #ed1c24;
+            width: 5px;
+            height: 16px;
+            border-radius: 1.92px / 1.92px;
+            transform-origin: 2.5px 28px;
+            box-sizing: content-box;
+
+            &:nth-child(1) {
+                transform: rotate(0deg);
+                animation-delay: -1.4903129657228018s;
+            }
+            &:nth-child(2) {
+                transform: rotate(32.72727272727273deg);
+                animation-delay: -1.3412816691505216s;
+            }
+            &:nth-child(3) {
+                transform: rotate(65.45454545454545deg);
+                animation-delay: -1.1922503725782414s;
+            }
+            &:nth-child(4) {
+                transform: rotate(98.18181818181819deg);
+                animation-delay: -1.0432190760059612s;
+            }
+            &:nth-child(5) {
+                transform: rotate(130.9090909090909deg);
+                animation-delay: -0.8941877794336811s;
+            }
+            &:nth-child(6) {
+                transform: rotate(163.63636363636363deg);
+                animation-delay: -0.7451564828614009s;
+            }
+            &:nth-child(7) {
+                transform: rotate(196.36363636363637deg);
+                animation-delay: -0.5961251862891207s;
+            }
+            &:nth-child(8) {
+                transform: rotate(229.0909090909091deg);
+                animation-delay: -0.44709388971684055s;
+            }
+            &:nth-child(9) {
+                transform: rotate(261.8181818181818deg);
+                animation-delay: -0.29806259314456035s;
+            }
+            &:nth-child(10) {
+                transform: rotate(294.54545454545456deg);
+                animation-delay: -0.14903129657228018s;
+            }
+            &:nth-child(11) {
+                transform: rotate(327.27272727272725deg);
+                animation-delay: 0s;
+            }
+        }
     }
 }

@@ -17,17 +17,24 @@
         }
         &-img {
             height: 275px;
-            width: 100%;
+            width: 730px;
+            object-fit: cover;
         }
         &-header {
+            display: flex;
+            flex-wrap: wrap;
             padding: 21px 16px 25px 16px;
             font-size: 16px;
             border-bottom: 1px solid $dividers;
             width: 100%;
             &_title {
+                width: 100%;
                 font-size: 27px;
                 font-family: 'Gilroy-700', sans-serif;
                 margin-bottom: 12px;
+            }
+            &_cities {
+                margin-right: 25px;
             }
         }
         &-bottom {
@@ -61,13 +68,12 @@
     }
     &_desc-block {
         font-size: 16px;
-        max-width: 540px;
         margin: 0 auto 32px auto;
         &_text {
             margin-bottom: 5px;
             font-weight: 500;
-            // max-height: 88px;
-            height: 88px;
+            //max-height: 88px;
+            // height: 88px;
             overflow: hidden;
             // transition: 0.4 max-height ease-in;
             line-height: 22px;
@@ -97,6 +103,7 @@
         align-items: stretch;
         margin-bottom: 60px;
         &_item {
+            position: relative;
             width: calc((100% - 30px*3)/4);
             background-color: white;
             border-radius: 10px;
@@ -117,6 +124,63 @@
                 font-size: 14px;
                 line-height: 18px;
                 color: $red;
+            }
+
+            &:nth-of-type(1) {
+                cursor: pointer;
+            }
+
+            &-popover {
+                display: none;
+                width: 185px;
+                z-index: 2;
+                cursor: default;
+                position: absolute;
+                left: 0;
+                margin-top: 23px;
+                background-color: white;
+                border-radius: 10px;
+                padding: 17px 9px 11px 9px;
+                box-shadow: 0 4px 64px rgba(0, 0, 0, 0.15);
+
+                .popover-header {
+                    color: $red;
+                }
+
+                .popover-text + .popover-header {
+                    margin-top: 20px;
+                }
+
+                .popover-text {
+                    margin-top: 5px;
+                }
+
+                .close {
+                    cursor: pointer;
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    width: 35px;
+                    height: 35px;
+                    opacity: 0.3;
+
+                    &:hover { opacity: 0.7; }
+                    &:before, &:after {
+                        right: 20px;
+                        top: 8px;
+                        position: absolute;
+                        content: ' ';
+                        height: 22px;
+                        width: 2px;
+                        background-color: #333;
+                    }
+                    &:before { transform: rotate(45deg); }
+                    &:after { transform: rotate(-45deg); }
+                }
+            }
+
+            .popover--open {
+                display: block;
             }
         }
     }
@@ -183,7 +247,7 @@
         width: max-content;
         margin: 0 auto;
         &-price {
-            margin-bottom: 10px;
+            //margin-bottom: 10px;
             font-size: 30px;
             line-height: 30px;
             text-align: right;
@@ -212,6 +276,17 @@
     .btn {
         width: 100%;
         margin-top: 18px;
+    }
+}
+
+@media(max-width: 768px) {
+    .hotel-details {
+        &_card {
+            &-img {
+                width: 100%;
+                overflow: hidden;
+            }
+        }
     }
 }
 

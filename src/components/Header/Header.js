@@ -1,13 +1,28 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { Link } from "react-router-dom";
 import cx from "classnames";
 import useRouter from "use-react-router";
-
-import Logo from "../../assets/logo.svg";
+import {getMainData} from "../../routes/apiQueries";
 
 const Header = () => {
 	const { history } = useRouter();
 	const path = history.location.pathname;
+
+	const [headerLogoImg, setHeaderLogoImg] = useState(localStorage.getItem('headerLogoImg') || '');
+
+	useEffect(() => {
+		if (!headerLogoImg) {
+			getMainData().then(
+				(response) => {
+					setHeaderLogoImg(response['header-logo-img']);
+					localStorage.setItem('headerLogoImg', response['header-logo-img']);
+				},
+				(error) => {
+					console.error("Error getting main data", error);
+				},
+			);
+		}
+	});
 
 	return (
 		<header
@@ -15,7 +30,7 @@ const Header = () => {
 				"header--main": path !== "/",
 			})}>
 			<Link to='/'>
-				<img className='header-logo' src={Logo} alt='logo' />
+				<img className='header-logo' src={headerLogoImg} alt='logo' />
 			</Link>
 		</header>
 	);
@@ -68,11 +83,11 @@ export const BreadCrumbs = ({ children, breadCrumb }) => {
 
 				{hotelDetailsPageData && (
 					<Link
-						to={hotelDetailsPageData.link}
+						to={hotelDetailsPageData['HotelName']}
 						className={cx({
 							"bread-crumbs_item--active": hotelDetailsPageData && !isBooking,
 						})}>
-						{`/ ${hotelDetailsPageData.title}  `} &nbsp;
+						{`/ ${hotelDetailsPageData['HotelName']}  `} &nbsp;
 					</Link>
 				)}
 
